@@ -1,0 +1,26 @@
+{
+  "name": "CLI_Amazon",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bamazonCustomer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tloiola1/CLI_Amazon.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tloiola1/CLI_Amazon/issues"
+  },
+  "homepage": "https://github.com/tloiola1/CLI_Amazon#readme",
+  "dependencies": {
+    "coloring": "^0.1.0",
+    "inquirer": "^3.3.0",
+    "mysql": "^2.15.0",
+    "node-emoji": "^1.8.1"
+  }
+}
