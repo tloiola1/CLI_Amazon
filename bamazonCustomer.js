@@ -81,7 +81,7 @@ function buyProduct(connection){
       //key name & value quantity
       name: 'quantity',
       // ask user to enter quantity wished to add to cart
-      message: 'How many would you like to add to your cart? ',
+      message: 'How many would you like to add to your cart?',
       validate: function(value){
          if (isNaN(value) === false){
             return true;
@@ -141,14 +141,14 @@ function buyProduct(connection){
                            //query the id then insert new quantity to this id
                            id: answer.idNumber
                         }
-                     ], 
+                     ],
                      function(err, res){
                         //this condition executes only if user quantity is a valid input >= 1
-                        if(answer.quantity > 0){
+                        // if(answer.quantity > 0){
                            //show that changes were made in database
-                           cl(coloring.green(res.affectedRows + " Stock updated!\n"));
+                           // cl(coloring.green(res.affectedRows + " Stock updated!\n"));
                            buyProduct(connection);
-                        }
+                        // }
                      }
                   );
                }
