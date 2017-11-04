@@ -127,7 +127,7 @@ function add_Inventory(connection){
 		var query = 'SELECT stock_quantity FROM bamazondb.products WHERE id = ' + answer.idNumber;
 		connection.query(query, function(err, res){
 			var newQuantity =  res[0].stock_quantity + parseInt(answer.quantity);
-			cl(newQuantity);
+			// cl(newQuantity);
 
 		// cl(answer.idNumber + ' ' + answer.quantity);
 		connection.query('UPDATE bamazondb.products SET ? WHERE ?',

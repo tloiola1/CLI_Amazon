@@ -27,19 +27,36 @@ function getDatabase(key){
       database: 'bamazondb'
    });
    //passing variable containing connection structure to a function to be executed.
-   connectMe(connection);
+   menu_options(connection);
 }
 
-function connectMe(connection){
-   connection.connect(function(err){
-      if(err) throw err;
-      // cl('Connect as id: ' + _connection.threadId +'\n');
-      //connection create now start work on a function to display contents from database;
-      display_data(connection);
+function menu_options(connection){
+   cl('\n');
+   inquirer.prompt({
+      type: 'list',
+      name: 'option',
+      message: coloring.green('****** MENU OPTIONS *****'),
+      choices: ['View Products for Sale', 'Buy Product', 'View Your Cart', 'Exit']
+   }).then(function(answer){
+      switch(answer.option){
+         case 'View Products for Sale':
+            viewProducts(connection);
+            break;
+         case 'Buy Product':
+            buyProduct(connection);
+            break;
+         case 'View Your Cart':
+            viewCart(connection);
+            break;
+         case 'Exit':
+            disconnect(connection);
+            break;
+      }
+
    });
 }
 
-function display_data(connection){ 
+function viewProducts(connection){ 
    //display database contents
    cl(coloring.green('\n****** PRODUCTS FOR SALE ******\n'));
    // ids, names, and prices of products for sale
@@ -53,7 +70,7 @@ function display_data(connection){
          cl(coloring.green('-------------------------------------------------------------------------------------------'));
       }
       //call function for user to buy product and passing connection as parameter
-      buyProduct(connection);
+      menu_options(connection);
    });
 }
 //function for user to buy product
@@ -67,7 +84,7 @@ function buyProduct(connection){
       name: 'idNumber',
       //ask the ID of the product user would like to buy. 
       // if user wish to leave press enter to exit the program which will be executed in line 103.
-      message: 'To Exit Program Press Enter.\n'+'  To Make A Purchase Enter Product ID#.',
+      message: 'To Make A Purchase Enter Product ID#.',
       validate: function(value){
          if (isNaN(value) === false){
             return true;
@@ -103,7 +120,7 @@ function buyProduct(connection){
          //this condition executes if user has missing both inputs in a atempt to exit the program
          if(err){
             //call function to exit & end program.
-            disconnect(connection);
+            menu_options(connection);
             return;
          }
          else{
@@ -114,18 +131,21 @@ function buyProduct(connection){
                //show user quantity available in stock
                cl('Quantity available in stock: ' + res[0].stock_quantity);
                //returning to function where can enter new quantity of the product user wishes to buy
-               buyProduct(connection);
+               menu_options(connection);
                return true;
             }
             //condition pass if quantity is stock is available
             else{
                //this conditition olny executes if id of product or quantity needed are valid inputs
                if(res[0].product_name !== undefined && answer.quantity > 0){
-                  //show user that the product has been added to cart
-                  cl(coloring.green('\n ****** YOUR CART ******'));
-                  //user cart has product name, quantity added, and total price which is = to quantity * product price
-                  cl(' Product Name: ' + coloring.bold(res[0].product_name) + ' | Quantity: ' + coloring.bold(answer.quantity)
-                     + ' | Total: $' + coloring.bold(res[0].price * answer.quantity));
+                  var product = res[0].product_name;
+                  var total = res[0].price * answer.quantity;
+
+                  fs.appendFile("cart.txt", ", " + product +', ' + answer.quantity + ', '+ total, function(err) {
+                     if (err) {
+                        return print(err);
+                      }
+                  });
                   cl('\n');
                   //newQuantity variable is = to quantity in database stock subtracted by user purchased quantity.
                   var newQuantity = res[0].stock_quantity - answer.quantity;
@@ -135,7 +155,8 @@ function buyProduct(connection){
                      [
                         {
                            //update stock quantity to new quantity
-                           stock_quantity: newQuantity
+                           stock_quantity: newQuantity,
+                           product_sales: total
                         },
                         {
                            //query the id then insert new quantity to this id
@@ -144,11 +165,11 @@ function buyProduct(connection){
                      ],
                      function(err, res){
                         //this condition executes only if user quantity is a valid input >= 1
-                        // if(answer.quantity > 0){
-                           //show that changes were made in database
-                           // cl(coloring.green(res.affectedRows + " Stock updated!\n"));
-                           buyProduct(connection);
-                        // }
+                        if(answer.quantity > 0){
+                           // show that changes were made in database
+                           cl(coloring.green(" It Has Been Added to Your Cart!\n"));
+                           menu_options(connection);
+                        }
                      }
                   );
                }
@@ -164,12 +185,12 @@ function buyProduct(connection){
                      //condition executes if user missed one of the parameters id of the product &&|| quantity needed by mistake
                      if(user.option === 'Continue Shopping.'){
                         //then goes back to menu where user can enter valid paramenters
-                        buyProduct(connection);
+                        menu_options(connection);
                      }
                      //condition executes if intentional in a attempt to exit the program
                      else if(user.option === 'Exit Program.'){
                         //exit and end program
-                        disconnect(connection);
+                        menu_options(connection);
                      }
                   })
                }
@@ -178,10 +199,42 @@ function buyProduct(connection){
       });
    });
 }
+//function Cart
+function viewCart(connection){
+   cl(coloring.green('\n ****** YOUR CART ******'));
+   //Read cart
+   fs.readFile("cart.txt", "utf8", function(err, data) {
+     //Throw error if not meet condition
+      if (err) {
+       return cl(err);
+      }
+      // Break the string down by comma separation and store the contents into the output_movie array.
+      var cart = data.split(", ");
+      var total = 0;
+      for (var i = 1; i < cart.length; i++) {
+         total += parseFloat(cart[i+2]);
+         var myCart = ' Product Name: ' + cart[i] + ' | Quantity: ' + cart[i+1] + ' | Total: ' + cart[i+2];
+
+         cl(myCart);
+         cl(coloring.green('-------------------------------------------------------------------------------------'));
+
+         i +=2;
+      }
+      if(total === 0){
+         cl('Your Cart is Empty. Let`s Shopping!!');
+         menu_options(connection);
+         return;
+      }
+      cl(' You Pay: '+ total);
+      menu_options(connection);
+   }); 
+}
 //function to end database connection and exit program
 function disconnect(connection){
-   cl('\n***** THANKS FOR SHOPPING WITH US! *****\n');
-   connection.end();
+   fs.writeFile('cart.txt', '', function(){
+      cl('\n***** THANKS FOR SHOPPING WITH US! *****\n');
+      connection.end();
+   });
 }
 //function to console.log // easier to type that's all
 //as a java developer I used to use pl short for println and p short for print
